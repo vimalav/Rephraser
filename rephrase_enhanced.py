@@ -126,30 +126,102 @@ class RephraserApp(rumps.App):
         rumps.alert(
             title="Text Rephraser",
             message="A lightweight menu bar app for rephrasing text using Google Gemini AI.\n\n"
-                   "Hotkey: Cmd+Shift+P\n\n"
+                   "Hotkeys:\n"
+                   "• Cmd+Shift+P - Quick rephrase\n"
+                   "• Cmd+Shift+Option+P - Mode selection\n\n"
                    "Features:\n"
                    "• Multiple preset modes\n"
                    "• Custom prompts\n"
                    "• Clipboard integration\n\n"
                    "Made with ❤️"
         )
+    def show_mode_selection_modal(self):
+        """Show modal for selecting rephrasing mode"""
+        # Get clipboard text first
+        try:
+            text = pyperclip.paste()
+            if not text or not text.strip():
+                rumps.alert("Error", "No text found in clipboard")
+                return
+        except Exception as e:
+            rumps.alert("Error", f"Could not read clipboard: {str(e)}")
+            return
+        
+        # Create mode selection window
+        mode_options = list(PRESET_MODES.keys())
+        current_index = mode_options.index(self.current_mode) if self.current_mode in mode_options else 0
+        
+        # Build message with mode options
+        message = "Select a rephrasing mode:\n\n"
+        for i, mode in enumerate(mode_options, 1):
+            marker = "●" if mode == self.current_mode else "○"
+            message += f"{marker} {i}. {mode}\n"
+        message += "\nOr enter a custom prompt below:"
+        
+        window = rumps.Window(
+            title="Select Rephrasing Mode",
+            message=message,
+            default_text=self.custom_prompt if self.custom_prompt else "",
+            ok="Rephrase",
+            cancel="Cancel",
+            dimensions=(400, 200)
+        )
+        
+        response = window.run()
+        
+        if response.clicked:
+            custom_text = response.text.strip()
+            
+            if custom_text:
+                # User entered custom prompt
+                self.custom_prompt = custom_text
+                self.current_mode = "Custom"
+                
+                # Uncheck all preset modes
+                for item in self.menu["Preset Modes"].values():
+                    item.state = False
+            
+            # Now rephrase with selected/current mode
+            thread = threading.Thread(target=self._process_rephrase, args=(text,))
+            thread.daemon = True
+            thread.start()
+    
     
     def start_hotkey_listener(self):
-        """Start listening for global hotkey Cmd+Shift+P"""
-        def on_activate():
+        """Start listening for global hotkeys"""
+        def on_quick_rephrase():
             self.rephrase_clipboard(None)
+        
+        def on_modal_rephrase():
+            self.show_mode_selection_modal()
         
         def for_canonical(f):
             return lambda k: f(listener.canonical(k))
         
-        hotkey = keyboard.HotKey(
+        # Cmd+Shift+P - Quick rephrase with current mode
+        hotkey1 = keyboard.HotKey(
             keyboard.HotKey.parse('<cmd>+<shift>+p'),
-            on_activate
+            on_quick_rephrase
         )
         
+        # Cmd+Shift+Option+P - Show mode selection modal
+        hotkey2 = keyboard.HotKey(
+            keyboard.HotKey.parse('<cmd>+<shift>+<alt>+p'),
+            on_modal_rephrase
+        )
+        
+        # Combined listener for both hotkeys
+        def on_press(key):
+            hotkey1.press(listener.canonical(key))
+            hotkey2.press(listener.canonical(key))
+        
+        def on_release(key):
+            hotkey1.release(listener.canonical(key))
+            hotkey2.release(listener.canonical(key))
+        
         listener = keyboard.Listener(
-            on_press=for_canonical(hotkey.press),
-            on_release=for_canonical(hotkey.release)
+            on_press=on_press,
+            on_release=on_release
         )
         
         listener.start()

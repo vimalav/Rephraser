@@ -5,7 +5,9 @@ A lightweight macOS menu bar application that rephrases clipboard text using Goo
 ## ✨ Features
 
 - 🐧 **Menu Bar Integration**: Lives in your macOS menu bar with a cute penguin icon
-- ⌨️ **Global Hotkey**: Press `Cmd + Shift + P` from anywhere to rephrase clipboard text
+- ⌨️ **Global Hotkeys**:
+  - `Cmd + Shift + P` - Quick rephrase with current mode
+  - `Cmd + Shift + Option + P` - Show mode selection modal
 - 🎯 **Multiple Preset Modes**:
   - **Polite**: Make text more courteous and respectful
   - **Professional**: Transform to formal business language
@@ -96,13 +98,24 @@ You'll see a 🐧 penguin icon appear in your menu bar!
 
 ### How to Use
 
-#### Method 1: Using the Hotkey (Recommended)
+#### Method 1: Quick Rephrase (Fastest)
 
 1. Copy any text to your clipboard
 2. Press `Cmd + Shift + P` from anywhere
 3. Watch the icon change: 🐧 → ⏳ → ✅
 4. The rephrased text is automatically copied to your clipboard
 5. Paste it wherever you need!
+
+#### Method 2: Rephrase with Mode Selection
+
+1. Copy any text to your clipboard
+2. Press `Cmd + Shift + Option + P` from anywhere
+3. A modal appears showing:
+   - All preset modes (Polite, Professional, Casual, etc.)
+   - Custom prompt field
+4. Select a mode or enter a custom prompt
+5. Click "Rephrase" or press Enter
+6. The rephrased text is copied to your clipboard
 
 #### Method 2: Using the Menu
 
@@ -179,7 +192,7 @@ To make the app start automatically when you log in:
 
 - Grant Accessibility permissions (see above)
 - Restart the app after granting permissions
-- Make sure no other app is using `Cmd+Shift+P`
+- Make sure no other app is using `Cmd+Shift+P` or `Cmd+Shift+Option+P`
 
 ### "Import rumps could not be resolved"
 
