@@ -164,11 +164,13 @@ class RephraserApp(rumps.App):
         """Show about dialog"""
         rumps.alert(
             title="Text Rephraser",
-            message="A lightweight menu bar app for rephrasing text using Google Gemini AI.\n\n"
+            message="A lightweight menu bar app for rephrasing text using AI.\n\n"
                    "Hotkeys:\n"
                    "• Cmd+Shift+P - Quick rephrase\n"
-                   "• Cmd+Shift+Option+P - Mode selection\n\n"
+                   "• Cmd+Shift+M - Mode selection\n\n"
                    "Features:\n"
+                   "• Multi-provider AI (Gemini, Groq, HuggingFace)\n"
+                   "• Automatic fallback\n"
                    "• Multiple preset modes\n"
                    "• Custom prompts\n"
                    "• Clipboard integration\n\n"
@@ -247,19 +249,17 @@ class RephraserApp(rumps.App):
             except:
                 pass
             
-            # Check for Cmd+Shift+Option+P (modal) - check this FIRST
+            # Check for Cmd+Shift+M (modal selection)
             if (keyboard.Key.cmd in current_keys and
                 keyboard.Key.shift in current_keys and
-                keyboard.Key.alt in current_keys and
-                (hasattr(key, 'char') and key.char == 'p')):
+                (hasattr(key, 'char') and key.char == 'm')):
                 on_modal_rephrase()
                 current_keys.clear()
                 return
             
-            # Check for Cmd+Shift+P (quick rephrase) - check this SECOND
+            # Check for Cmd+Shift+P (quick rephrase)
             if (keyboard.Key.cmd in current_keys and
                 keyboard.Key.shift in current_keys and
-                keyboard.Key.alt not in current_keys and  # Make sure Option is NOT pressed
                 (hasattr(key, 'char') and key.char == 'p')):
                 on_quick_rephrase()
                 current_keys.clear()
@@ -280,7 +280,7 @@ class RephraserApp(rumps.App):
         listener.start()
         print("Hotkey listener started")
         print("  Cmd+Shift+P - Quick rephrase")
-        print("  Cmd+Shift+Option+P - Mode selection modal")
+        print("  Cmd+Shift+M - Mode selection modal")
     
     @rumps.clicked("Rephrase Clipboard")
     def rephrase_clipboard(self, _):

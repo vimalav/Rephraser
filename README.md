@@ -7,7 +7,7 @@ A lightweight macOS menu bar application that rephrases clipboard text using mul
 - 🐧 **Menu Bar Integration**: Lives in your macOS menu bar with a cute penguin icon
 - ⌨️ **Global Hotkeys**:
   - `Cmd + Shift + P` - Quick rephrase with current mode
-  - `Cmd + Shift + Option + P` - Show mode selection modal
+  - `Cmd + Shift + M` - Show mode selection modal
 - 🎯 **Multiple Preset Modes**:
   - **Polite**: Make text more courteous and respectful
   - **Professional**: Transform to formal business language
@@ -126,7 +126,7 @@ You'll see a 🐧 penguin icon appear in your menu bar!
 #### Method 2: Rephrase with Mode Selection
 
 1. Copy any text to your clipboard
-2. Press `Cmd + Shift + Option + P` from anywhere
+2. Press `Cmd + Shift + M` from anywhere
 3. A modal appears showing:
    - All preset modes (Polite, Professional, Casual, etc.)
    - Custom prompt field
@@ -217,7 +217,7 @@ To make the app start automatically when you log in:
 
 - Grant Accessibility permissions (see above)
 - Restart the app after granting permissions
-- Make sure no other app is using `Cmd+Shift+P` or `Cmd+Shift+Option+P`
+- Make sure no other app is using `Cmd+Shift+P` or `Cmd+Shift+M`
 
 ### "Import rumps could not be resolved"
 
