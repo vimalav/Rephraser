@@ -229,35 +229,48 @@ class RephraserApp(rumps.App):
     
     def start_hotkey_listener(self):
         """Start listening for global hotkeys"""
+        # Track currently pressed keys
+        current_keys = set()
+        
         def on_quick_rephrase():
+            print("Quick rephrase triggered")
             self.rephrase_clipboard(None)
         
         def on_modal_rephrase():
+            print("Modal rephrase triggered")
             self.show_mode_selection_modal()
         
-        def for_canonical(f):
-            return lambda k: f(listener.canonical(k))
-        
-        # Cmd+Shift+P - Quick rephrase with current mode
-        hotkey1 = keyboard.HotKey(
-            keyboard.HotKey.parse('<cmd>+<shift>+p'),
-            on_quick_rephrase
-        )
-        
-        # Cmd+Shift+Option+P - Show mode selection modal
-        hotkey2 = keyboard.HotKey(
-            keyboard.HotKey.parse('<cmd>+<shift>+<alt>+p'),
-            on_modal_rephrase
-        )
-        
-        # Combined listener for both hotkeys
         def on_press(key):
-            hotkey1.press(listener.canonical(key))
-            hotkey2.press(listener.canonical(key))
+            # Add key to current set
+            try:
+                current_keys.add(key)
+            except:
+                pass
+            
+            # Check for Cmd+Shift+Option+P (modal) - check this FIRST
+            if (keyboard.Key.cmd in current_keys and
+                keyboard.Key.shift in current_keys and
+                keyboard.Key.alt in current_keys and
+                (hasattr(key, 'char') and key.char == 'p')):
+                on_modal_rephrase()
+                current_keys.clear()
+                return
+            
+            # Check for Cmd+Shift+P (quick rephrase) - check this SECOND
+            if (keyboard.Key.cmd in current_keys and
+                keyboard.Key.shift in current_keys and
+                keyboard.Key.alt not in current_keys and  # Make sure Option is NOT pressed
+                (hasattr(key, 'char') and key.char == 'p')):
+                on_quick_rephrase()
+                current_keys.clear()
+                return
         
         def on_release(key):
-            hotkey1.release(listener.canonical(key))
-            hotkey2.release(listener.canonical(key))
+            # Remove key from current set
+            try:
+                current_keys.discard(key)
+            except:
+                pass
         
         listener = keyboard.Listener(
             on_press=on_press,
@@ -265,6 +278,9 @@ class RephraserApp(rumps.App):
         )
         
         listener.start()
+        print("Hotkey listener started")
+        print("  Cmd+Shift+P - Quick rephrase")
+        print("  Cmd+Shift+Option+P - Mode selection modal")
     
     @rumps.clicked("Rephrase Clipboard")
     def rephrase_clipboard(self, _):
