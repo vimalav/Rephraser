@@ -17,6 +17,9 @@
     <key>KeepAlive</key>
     <false/>
     
+    <key>ThrottleInterval</key>
+    <integer>10</integer>
+    
     <key>StandardOutPath</key>
     <string>/Users/vimalvenugopal/Documents/Tinkering/rephrase-python-app/rephraser.log</string>
     
