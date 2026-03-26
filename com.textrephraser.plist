@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.textrephraser</string>
+    
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Library/Frameworks/Python.framework/Versions/3.14/bin/python3</string>
+        <string>/Users/vimalvenugopal/Documents/Tinkering/rephrase-python-app/rephrase_enhanced.py</string>
+    </array>
+    
+    <key>RunAtLoad</key>
+    <true/>
+    
+    <key>KeepAlive</key>
+    <false/>
+    
+    <key>StandardOutPath</key>
+    <string>/Users/vimalvenugopal/Documents/Tinkering/rephrase-python-app/rephraser.log</string>
+    
+    <key>StandardErrorPath</key>
+    <string>/Users/vimalvenugopal/Documents/Tinkering/rephrase-python-app/rephraser.error.log</string>
+    
+    <key>WorkingDirectory</key>
+    <string>/Users/vimalvenugopal/Documents/Tinkering/rephrase-python-app</string>
+    
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/Library/Frameworks/Python.framework/Versions/3.14/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    </dict>
+</dict>
+</plist>
