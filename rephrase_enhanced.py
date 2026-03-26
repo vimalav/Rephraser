@@ -9,6 +9,8 @@ import rumps
 import os
 from dotenv import load_dotenv
 from google import genai
+from groq import Groq
+from huggingface_hub import InferenceClient
 import pyperclip
 from pynput import keyboard
 import threading
@@ -37,14 +39,23 @@ class RephraserApp(rumps.App):
         self.is_processing = False
         self.current_mode = "Professional"  # Default mode
         self.custom_prompt = ""
+        self.current_provider = "Gemini"  # Default provider
+        self.failed_providers = set()  # Track failed providers for this session
         
-        # Initialize Gemini API
-        api_key = os.getenv('GEMINI_API_KEY')
-        if not api_key:
-            rumps.alert("Error", "GEMINI_API_KEY not found in .env file")
+        # Initialize API clients
+        self.gemini_key = os.getenv('GEMINI_API_KEY')
+        self.groq_key = os.getenv('GROQ_API_KEY')
+        self.hf_token = os.getenv('HF_TOKEN')
+        
+        # Check if at least one provider is configured
+        if not any([self.gemini_key, self.groq_key, self.hf_token]):
+            rumps.alert("Error", "No API keys found in .env file. Please add at least one provider key.")
             rumps.quit_application()
         
-        self.client = genai.Client(api_key=api_key)
+        # Initialize clients
+        self.gemini_client = genai.Client(api_key=self.gemini_key) if self.gemini_key else None
+        self.groq_client = Groq(api_key=self.groq_key) if self.groq_key else None
+        self.hf_client = InferenceClient(token=self.hf_token) if self.hf_token else None
         
         # Build menu
         self.build_menu()
@@ -65,12 +76,29 @@ class RephraserApp(rumps.App):
                 item.state = True
             preset_items.append(item)
         
+        # Provider status submenu
+        provider_items = []
+        providers = [
+            ("Gemini", self.gemini_client),
+            ("Groq", self.groq_client),
+            ("HuggingFace", self.hf_client)
+        ]
+        
+        for provider_name, client in providers:
+            if client:
+                status = "❌ Failed" if provider_name in self.failed_providers else "✅ Available"
+                item = rumps.MenuItem(f"{provider_name}: {status}")
+                provider_items.append(item)
+        
         # Main menu
         self.menu = [
             rumps.MenuItem("Rephrase Clipboard", callback=self.rephrase_clipboard),
             None,
             [rumps.MenuItem("Preset Modes"), preset_items],
             rumps.MenuItem("Custom Prompt...", callback=self.set_custom_prompt),
+            None,
+            [rumps.MenuItem("Provider Status"), provider_items],
+            rumps.MenuItem("Reset Failed Providers", callback=self.reset_providers),
             None,
             rumps.MenuItem("About", callback=self.show_about),
             rumps.MenuItem("Quit", callback=self.quit_app)
@@ -120,6 +148,17 @@ class RephraserApp(rumps.App):
                     subtitle="Using custom prompt",
                     message="Copy text and press Cmd+Shift+P to rephrase"
                 )
+    def reset_providers(self, _):
+        """Reset failed providers to allow retry"""
+        self.failed_providers.clear()
+        self.build_menu()  # Rebuild menu to update status
+        
+        rumps.notification(
+            title="Providers Reset",
+            subtitle="All providers available again",
+            message="Failed providers have been reset and can be retried"
+        )
+    
     
     def show_about(self, _):
         """Show about dialog"""
@@ -135,6 +174,7 @@ class RephraserApp(rumps.App):
                    "• Clipboard integration\n\n"
                    "Made with ❤️"
         )
+    
     def show_mode_selection_modal(self):
         """Show modal for selecting rephrasing mode"""
         # Get clipboard text first
@@ -248,8 +288,63 @@ class RephraserApp(rumps.App):
         thread.daemon = True
         thread.start()
     
+    def _rephrase_with_gemini(self, prompt):
+        """Try to rephrase using Gemini"""
+        if not self.gemini_client or "Gemini" in self.failed_providers:
+            return None
+        
+        try:
+            response = self.gemini_client.models.generate_content(
+                model='gemini-2.5-flash',
+                contents=prompt
+            )
+            return response.text if response.text else None
+        except Exception as e:
+            error_str = str(e)
+            if "429" in error_str or "RESOURCE_EXHAUSTED" in error_str:
+                self.failed_providers.add("Gemini")
+            raise
+    
+    def _rephrase_with_groq(self, prompt):
+        """Try to rephrase using Groq"""
+        if not self.groq_client or "Groq" in self.failed_providers:
+            return None
+        
+        try:
+            response = self.groq_client.chat.completions.create(
+                model="llama-3.3-70b-versatile",
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.7,
+                max_tokens=1024
+            )
+            return response.choices[0].message.content if response.choices else None
+        except Exception as e:
+            error_str = str(e)
+            if "429" in error_str or "rate_limit" in error_str.lower():
+                self.failed_providers.add("Groq")
+            raise
+    
+    def _rephrase_with_hf(self, prompt):
+        """Try to rephrase using Hugging Face"""
+        if not self.hf_client or "HuggingFace" in self.failed_providers:
+            return None
+        
+        try:
+            response = self.hf_client.text_generation(
+                prompt,
+                model="meta-llama/Llama-3.2-3B-Instruct",
+                max_new_tokens=512,
+                temperature=0.7
+            )
+            return response if response else None
+        except Exception as e:
+            error_str = str(e)
+            if "429" in error_str or "rate" in error_str.lower():
+                self.failed_providers.add("HuggingFace")
+            raise
+    
     def _process_rephrase(self, text):
-        """Process the rephrasing in background"""
+        """Process the rephrasing in background with fallback"""
         self.is_processing = True
         
         # Change icon to processing
@@ -263,17 +358,31 @@ class RephraserApp(rumps.App):
                 base_prompt = PRESET_MODES.get(self.current_mode, PRESET_MODES["Professional"])
                 prompt = f"{base_prompt}\n\n{text}"
             
-            # Call Gemini API
-            response = self.client.models.generate_content(
-                model='gemini-2.5-flash',
-                contents=prompt
-            )
+            rephrased_text = None
+            provider_used = None
             
-            rephrased_text = response.text
+            # Try providers in order: Gemini -> Groq -> HuggingFace
+            providers = [
+                ("Gemini", self._rephrase_with_gemini),
+                ("Groq", self._rephrase_with_groq),
+                ("HuggingFace", self._rephrase_with_hf)
+            ]
             
-            # Handle None response
+            for provider_name, rephrase_func in providers:
+                if provider_name in self.failed_providers:
+                    continue
+                
+                try:
+                    rephrased_text = rephrase_func(prompt)
+                    if rephrased_text:
+                        provider_used = provider_name
+                        break
+                except Exception as e:
+                    print(f"{provider_name} failed: {e}")
+                    continue
+            
             if not rephrased_text:
-                raise Exception("No response from Gemini API")
+                raise Exception("All providers failed or returned empty response")
             
             # Copy to clipboard
             pyperclip.copy(rephrased_text)
@@ -284,7 +393,7 @@ class RephraserApp(rumps.App):
             # Show success notification
             rumps.notification(
                 title="✅ Done!",
-                subtitle=f"Rephrased using: {self.current_mode}",
+                subtitle=f"Rephrased using: {provider_used}",
                 message=rephrased_text[:100] + ("..." if len(rephrased_text) > 100 else "")
             )
             

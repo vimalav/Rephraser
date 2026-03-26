@@ -1,6 +1,6 @@
 # 🐧 Text Rephraser - AI-Powered Menu Bar App
 
-A lightweight macOS menu bar application that rephrases clipboard text using Google Gemini AI. Features multiple preset modes, custom prompts, and seamless clipboard integration.
+A lightweight macOS menu bar application that rephrases clipboard text using multiple AI providers with automatic fallback. Features multiple preset modes, custom prompts, and seamless clipboard integration.
 
 ## ✨ Features
 
@@ -18,13 +18,21 @@ A lightweight macOS menu bar application that rephrases clipboard text using Goo
 - ✏️ **Custom Prompts**: Create your own rephrasing instructions
 - 📋 **Clipboard Integration**: Automatically works with copied text
 - 🔄 **Visual Feedback**: Icon changes during processing (🐧 → ⏳ → ✅)
-- 🤖 **AI-Powered**: Uses Google Gemini 2.0 Flash for intelligent rephrasing
+- 🤖 **Multi-Provider AI Support**:
+  - **Google Gemini** (Primary) - Fast and reliable
+  - **Groq** (Fallback) - High-speed inference
+  - **Hugging Face** (Fallback) - Open-source models
+- 🔁 **Automatic Fallback**: Seamlessly switches providers if one fails or hits quota limits
+- 📊 **Provider Status**: View which providers are available in the menu
 
 ## 📋 Prerequisites
 
 - macOS 10.13 or later
 - Python 3.8 or later
-- Google Gemini API Key ([Get one free here](https://makersuite.google.com/app/apikey))
+- At least one API key from:
+  - Google Gemini API Key ([Get one free here](https://makersuite.google.com/app/apikey))
+  - Groq API Key ([Get one free here](https://console.groq.com/keys))
+  - Hugging Face Token ([Get one free here](https://huggingface.co/settings/tokens))
 
 ## 🚀 Installation
 
@@ -51,10 +59,15 @@ This will install:
 - `pyperclip` - Clipboard operations
 - `python-dotenv` - Environment variable management
 - `google-genai` - Google Gemini API client
+- `groq` - Groq API client
+- `huggingface-hub` - Hugging Face API client
 
-### 3. Set Up Your API Key
+### 3. Set Up Your API Keys
 
-1. Get your free Gemini API key from [Google AI Studio](https://makersuite.google.com/app/apikey)
+1. Get API keys from one or more providers:
+   - [Google Gemini API](https://makersuite.google.com/app/apikey) (Recommended)
+   - [Groq API](https://console.groq.com/keys) (Fast fallback)
+   - [Hugging Face Token](https://huggingface.co/settings/tokens) (Open-source fallback)
 
 2. Create a `.env` file from the template:
 
@@ -62,17 +75,21 @@ This will install:
    cp .env.example .env
    ```
 
-3. Edit `.env` and add your API key:
+3. Edit `.env` and add your API keys:
 
    ```bash
    nano .env
    ```
 
-   Replace `your-gemini-api-key-here` with your actual API key:
+   Add at least one API key (all three recommended for best reliability):
 
    ```
-   GEMINI_API_KEY=your-actual-api-key-here
+   GEMINI_API_KEY=your-gemini-api-key-here
+   GROQ_API_KEY=your-groq-api-key-here
+   HF_TOKEN=your-huggingface-token-here
    ```
+
+   **Note**: The app will automatically use available providers and fall back to others if one fails or hits quota limits.
 
 ### 4. Make the Script Executable
 
@@ -117,7 +134,7 @@ You'll see a 🐧 penguin icon appear in your menu bar!
 5. Click "Rephrase" or press Enter
 6. The rephrased text is copied to your clipboard
 
-#### Method 2: Using the Menu
+#### Method 3: Using the Menu
 
 1. Click the 🐧 icon in your menu bar
 2. Select "Rephrase Clipboard"
@@ -143,7 +160,15 @@ You'll see a 🐧 penguin icon appear in your menu bar!
 4. Click "Set"
 5. Now use the hotkey or menu to rephrase with your custom prompt
 
-## 🔧 macOS Permissions
+### Checking Provider Status
+
+1. Click the 🐧 icon
+2. Hover over "Provider Status" to see:
+   - ✅ Available - Provider is working
+   - ❌ Failed - Provider hit quota or failed
+3. Use "Reset Failed Providers" to retry failed providers
+
+## � macOS Permissions
 
 On first run, macOS will ask for permissions:
 
@@ -182,11 +207,11 @@ To make the app start automatically when you log in:
 
 ## 🐛 Troubleshooting
 
-### "GEMINI_API_KEY not found" error
+### "API_KEY not found" error
 
 - Make sure `.env` file exists in the app directory
-- Verify the API key is correctly set in `.env`
-- Check there are no extra spaces or quotes around the key
+- Verify at least one API key is correctly set in `.env`
+- Check there are no extra spaces or quotes around the keys
 
 ### Global hotkey doesn't work
 
@@ -199,11 +224,13 @@ To make the app start automatically when you log in:
 - Install dependencies: `pip3 install -r requirements.txt`
 - Make sure you're using Python 3: `python3 --version`
 
-### API errors
+### API errors or "All providers failed"
 
-- Verify your Gemini API key is valid
+- Verify at least one API key is valid
 - Check you have internet connection
-- Ensure you haven't exceeded API rate limits
+- If one provider fails, the app will automatically try others
+- Use "Reset Failed Providers" menu option to retry failed providers
+- Check provider status in the menu
 
 ### Icon doesn't appear in menu bar
 
@@ -213,11 +240,24 @@ To make the app start automatically when you log in:
 
 ## 💰 Cost Considerations
 
-Google Gemini API offers a generous free tier:
+All three providers offer generous free tiers:
+
+### Google Gemini (Primary)
 
 - **Free tier**: 15 requests per minute, 1,500 requests per day
-- A typical rephrasing request uses ~50-200 tokens
-- Most users will stay within the free tier limits
+- Fast and reliable for most use cases
+
+### Groq (Fallback)
+
+- **Free tier**: High-speed inference with generous limits
+- Excellent for when Gemini quota is exhausted
+
+### Hugging Face (Fallback)
+
+- **Free tier**: Access to open-source models
+- Good backup option with reasonable limits
+
+**Recommendation**: Configure all three providers for maximum reliability. The app will automatically use the best available provider and fall back to others when needed.
 
 ## 📁 Project Structure
 
@@ -234,9 +274,10 @@ rephrase-python-app/
 ## 🔒 Security Notes
 
 - Never commit your `.env` file to git (it's already in `.gitignore`)
-- Keep your Gemini API key secure and private
-- The app runs locally; no data is sent anywhere except Google's Gemini API
-- Each team member should use their own API key
+- Keep all your API keys secure and private
+- The app runs locally; no data is sent anywhere except the AI provider APIs
+- Each team member should use their own API keys
+- Rotate API keys periodically for security
 
 ## 🤝 Sharing with Team Members
 
