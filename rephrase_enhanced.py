@@ -233,12 +233,26 @@ class RephraserApp(rumps.App):
         """Start listening for global hotkeys"""
         # Track currently pressed keys
         current_keys = set()
+        last_trigger_time = {'quick': 0, 'modal': 0}
+        import time
         
         def on_quick_rephrase():
+            # Debounce - prevent multiple triggers within 1 second
+            current_time = time.time()
+            if current_time - last_trigger_time['quick'] < 1.0:
+                return
+            last_trigger_time['quick'] = current_time
+            
             print("Quick rephrase triggered")
             self.rephrase_clipboard(None)
         
         def on_modal_rephrase():
+            # Debounce - prevent multiple triggers within 1 second
+            current_time = time.time()
+            if current_time - last_trigger_time['modal'] < 1.0:
+                return
+            last_trigger_time['modal'] = current_time
+            
             print("Modal rephrase triggered")
             self.show_mode_selection_modal()
         
@@ -249,20 +263,26 @@ class RephraserApp(rumps.App):
             except:
                 pass
             
+            # Get the character if it's a character key
+            char = None
+            try:
+                if hasattr(key, 'char'):
+                    char = key.char.lower() if key.char else None
+            except:
+                pass
+            
+            # Check if Cmd and Shift are pressed
+            cmd_pressed = keyboard.Key.cmd in current_keys or keyboard.Key.cmd_r in current_keys
+            shift_pressed = keyboard.Key.shift in current_keys or keyboard.Key.shift_r in current_keys
+            
             # Check for Cmd+Shift+M (modal selection)
-            if (keyboard.Key.cmd in current_keys and
-                keyboard.Key.shift in current_keys and
-                (hasattr(key, 'char') and key.char == 'm')):
+            if cmd_pressed and shift_pressed and char == 'm':
                 on_modal_rephrase()
-                current_keys.clear()
                 return
             
             # Check for Cmd+Shift+P (quick rephrase)
-            if (keyboard.Key.cmd in current_keys and
-                keyboard.Key.shift in current_keys and
-                (hasattr(key, 'char') and key.char == 'p')):
+            if cmd_pressed and shift_pressed and char == 'p':
                 on_quick_rephrase()
-                current_keys.clear()
                 return
         
         def on_release(key):
