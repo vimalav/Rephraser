@@ -40,11 +40,11 @@ A lightweight macOS menu bar application that rephrases clipboard text using mul
 
 ```bash
 cd ~/Documents
-git clone <your-repo-url>
-cd rephrase-python-app
+git clone https://github.com/vimalav/Rephraser.git
+cd Rephraser
 ```
 
-Or download and extract the ZIP file.
+Or download and extract the ZIP file from the repository.
 
 ### 2. Install Python Dependencies
 
@@ -187,18 +187,43 @@ On first run, macOS will ask for permissions:
 3. Enable the checkbox
 4. Restart the app
 
-## 🔄 Running on Startup (Optional)
+## 🔄 Running on Startup (Recommended)
 
-To make the app start automatically when you log in:
+The app includes a launch agent for automatic startup. To enable it:
 
-### Using Automator
+### Using Launch Agent (Recommended)
+
+1. Copy the launch agent file:
+
+   ```bash
+   cp com.textrephraser.plist ~/Library/LaunchAgents/
+   ```
+
+2. Load the launch agent:
+
+   ```bash
+   launchctl load ~/Library/LaunchAgents/com.textrephraser.plist
+   ```
+
+3. The app will now start automatically on every login!
+
+**Managing Auto-Start:**
+
+- **Check status**: `launchctl list | grep textrephraser`
+- **Disable**: `launchctl unload ~/Library/LaunchAgents/com.textrephraser.plist`
+- **Re-enable**: `launchctl load ~/Library/LaunchAgents/com.textrephraser.plist`
+- **Remove**: `launchctl unload ~/Library/LaunchAgents/com.textrephraser.plist && rm ~/Library/LaunchAgents/com.textrephraser.plist`
+
+### Alternative: Using Automator
+
+If you prefer Automator:
 
 1. Open **Automator** (Applications → Automator)
 2. Create a new **Application**
 3. Add "Run Shell Script" action
 4. Paste this script (update the path to match your installation):
    ```bash
-   cd /Users/YOUR_USERNAME/Documents/rephrase-python-app
+   cd /Users/YOUR_USERNAME/Documents/Rephraser
    /usr/bin/python3 rephrase_enhanced.py
    ```
 5. Save as "Text Rephraser" in Applications
@@ -262,13 +287,16 @@ All three providers offer generous free tiers:
 ## 📁 Project Structure
 
 ```
-rephrase-python-app/
-├── rephrase_enhanced.py    # Main application
-├── requirements.txt        # Python dependencies
-├── .env                    # Your API key (not in git)
-├── .env.example           # Template for .env
-├── .gitignore            # Git ignore rules
-└── README.md             # This file
+Rephraser/
+├── rephrase_enhanced.py       # Main application
+├── requirements.txt           # Python dependencies
+├── com.textrephraser.plist   # Launch agent for auto-start
+├── .env                       # Your API keys (not in git)
+├── .env.example              # Template for .env
+├── .gitignore                # Git ignore rules
+├── STARTUP_INSTRUCTIONS.md   # Auto-start setup guide
+├── LICENSE                   # MIT License
+└── README.md                 # This file
 ```
 
 ## 🔒 Security Notes
@@ -299,10 +327,14 @@ rephrase-python-app/
 ## 🗑️ Uninstalling
 
 1. Stop the app (click 🐧 icon → Quit)
-2. Remove from Login Items (if added)
+2. Remove the launch agent (if installed):
+   ```bash
+   launchctl unload ~/Library/LaunchAgents/com.textrephraser.plist
+   rm ~/Library/LaunchAgents/com.textrephraser.plist
+   ```
 3. Delete the app directory:
    ```bash
-   rm -rf ~/Documents/rephrase-python-app
+   rm -rf ~/Documents/Rephraser
    ```
 
 ## 📝 License
@@ -312,14 +344,42 @@ MIT License - Feel free to use and modify!
 ## 🙏 Credits
 
 - Built with [rumps](https://github.com/jaredks/rumps) for macOS menu bar integration
-- Powered by [Google Gemini AI](https://ai.google.dev/)
+- Powered by multiple AI providers:
+  - [Google Gemini AI](https://ai.google.dev/)
+  - [Groq](https://groq.com/)
+  - [Hugging Face](https://huggingface.co/)
+- Developed with assistance from **Bob (Cline AI Assistant)**
 - Made with ❤️ for productivity
 
 ---
+
+## 🚀 Quick Start Summary
+
+```bash
+# 1. Clone the repo
+git clone https://github.com/vimalav/Rephraser.git
+cd Rephraser
+
+# 2. Install dependencies
+pip3 install -r requirements.txt
+
+# 3. Set up API keys
+cp .env.example .env
+nano .env  # Add your API keys
+
+# 4. Run the app
+python3 rephrase_enhanced.py
+
+# 5. (Optional) Enable auto-start
+cp com.textrephraser.plist ~/Library/LaunchAgents/
+launchctl load ~/Library/LaunchAgents/com.textrephraser.plist
+```
 
 **Enjoy rephrasing! 🐧✨**
 
 For issues or questions, check the Troubleshooting section above or refer to:
 
 - [Google Gemini API Documentation](https://ai.google.dev/docs)
+- [Groq API Documentation](https://console.groq.com/docs)
+- [Hugging Face Documentation](https://huggingface.co/docs)
 - [Python Documentation](https://www.python.org/doc/)
