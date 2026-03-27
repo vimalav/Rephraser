@@ -32,7 +32,7 @@ PRESET_MODES = {
 class RephraserApp(rumps.App):
     def __init__(self):
         super(RephraserApp, self).__init__(
-            "🐧",
+            "✏️",
             icon=None,
             quit_button=None
         )
@@ -231,30 +231,56 @@ class RephraserApp(rumps.App):
     
     def start_hotkey_listener(self):
         """Start listening for global hotkeys"""
-        # Track currently pressed keys
+        # Track currently pressed keys with better state management
         current_keys = set()
         last_trigger_time = {'quick': 0, 'modal': 0}
-        import time
         
         def on_quick_rephrase():
-            # Debounce - prevent multiple triggers within 1 second
+            # Debounce - prevent multiple triggers within 0.5 seconds
             current_time = time.time()
-            if current_time - last_trigger_time['quick'] < 1.0:
+            if current_time - last_trigger_time['quick'] < 0.5:
                 return
             last_trigger_time['quick'] = current_time
             
-            print("Quick rephrase triggered")
+            print("Quick rephrase triggered (Cmd+Shift+P)")
             self.rephrase_clipboard(None)
         
         def on_modal_rephrase():
-            # Debounce - prevent multiple triggers within 1 second
+            # Debounce - prevent multiple triggers within 0.5 seconds
             current_time = time.time()
-            if current_time - last_trigger_time['modal'] < 1.0:
+            if current_time - last_trigger_time['modal'] < 0.5:
                 return
             last_trigger_time['modal'] = current_time
             
-            print("Modal rephrase triggered")
+            print("Modal rephrase triggered (Cmd+Shift+M)")
             self.show_mode_selection_modal()
+        
+        def check_hotkey_combination():
+            """Check if a valid hotkey combination is pressed"""
+            # Check for Cmd (either left or right)
+            cmd_pressed = (keyboard.Key.cmd in current_keys or
+                          keyboard.Key.cmd_r in current_keys)
+            
+            # Check for Shift (either left or right)
+            shift_pressed = (keyboard.Key.shift in current_keys or
+                           keyboard.Key.shift_r in current_keys)
+            
+            if not (cmd_pressed and shift_pressed):
+                return None
+            
+            # Check for character keys
+            for key in current_keys:
+                try:
+                    if hasattr(key, 'char') and key.char:
+                        char = key.char.lower()
+                        if char == 'p':
+                            return 'quick'
+                        elif char == 'm':
+                            return 'modal'
+                except (AttributeError, TypeError):
+                    continue
+            
+            return None
         
         def on_press(key):
             # Add key to current set
@@ -263,27 +289,12 @@ class RephraserApp(rumps.App):
             except:
                 pass
             
-            # Get the character if it's a character key
-            char = None
-            try:
-                if hasattr(key, 'char'):
-                    char = key.char.lower() if key.char else None
-            except:
-                pass
-            
-            # Check if Cmd and Shift are pressed
-            cmd_pressed = keyboard.Key.cmd in current_keys or keyboard.Key.cmd_r in current_keys
-            shift_pressed = keyboard.Key.shift in current_keys or keyboard.Key.shift_r in current_keys
-            
-            # Check for Cmd+Shift+M (modal selection)
-            if cmd_pressed and shift_pressed and char == 'm':
-                on_modal_rephrase()
-                return
-            
-            # Check for Cmd+Shift+P (quick rephrase)
-            if cmd_pressed and shift_pressed and char == 'p':
+            # Check for hotkey combinations
+            hotkey = check_hotkey_combination()
+            if hotkey == 'quick':
                 on_quick_rephrase()
-                return
+            elif hotkey == 'modal':
+                on_modal_rephrase()
         
         def on_release(key):
             # Remove key from current set
@@ -292,14 +303,15 @@ class RephraserApp(rumps.App):
             except:
                 pass
         
+        # Start the listener
         listener = keyboard.Listener(
             on_press=on_press,
             on_release=on_release
         )
         
         listener.start()
-        print("Hotkey listener started")
-        print("  Cmd+Shift+P - Quick rephrase")
+        print("Hotkey listener started successfully")
+        print("  Cmd+Shift+P - Quick rephrase (current mode)")
         print("  Cmd+Shift+M - Mode selection modal")
     
     @rumps.clicked("Rephrase Clipboard")
@@ -435,14 +447,14 @@ class RephraserApp(rumps.App):
             
             # Reset icon after 2 seconds
             time.sleep(2)
-            self.title = "🐧"
+            self.title = "✏️"
             
         except Exception as e:
             import traceback
             error_details = traceback.format_exc()
             print(f"Error during rephrasing: {error_details}")
             # Change icon back to normal
-            self.title = "🐧"
+            self.title = "✏️"
             
             rumps.notification(
                 title="❌ Error",

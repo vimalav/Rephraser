@@ -1,10 +1,10 @@
-# 🐧 Text Rephraser - AI-Powered Menu Bar App
+# ✏️ Text Rephraser - AI-Powered Menu Bar App
 
 A lightweight macOS menu bar application that rephrases clipboard text using multiple AI providers with automatic fallback. Features multiple preset modes, custom prompts, and seamless clipboard integration.
 
 ## ✨ Features
 
-- 🐧 **Menu Bar Integration**: Lives in your macOS menu bar with a cute penguin icon
+- ✏️ **Menu Bar Integration**: Lives in your macOS menu bar with a pencil icon
 - ⌨️ **Global Hotkeys**:
   - `Cmd + Shift + P` - Quick rephrase with current mode
   - `Cmd + Shift + M` - Show mode selection modal
@@ -17,7 +17,7 @@ A lightweight macOS menu bar application that rephrases clipboard text using mul
   - **Simple**: Use simpler words and shorter sentences
 - ✏️ **Custom Prompts**: Create your own rephrasing instructions
 - 📋 **Clipboard Integration**: Automatically works with copied text
-- 🔄 **Visual Feedback**: Icon changes during processing (🐧 → ⏳ → ✅)
+- 🔄 **Visual Feedback**: Icon changes during processing (✏️ → ⏳ → ✅)
 - 🤖 **Multi-Provider AI Support**:
   - **Google Gemini** (Primary) - Fast and reliable
   - **Groq** (Fallback) - High-speed inference
@@ -111,7 +111,7 @@ Or run it directly:
 ./rephrase_enhanced.py
 ```
 
-You'll see a 🐧 penguin icon appear in your menu bar!
+You'll see a ✏️ pencil icon appear in your menu bar!
 
 ### How to Use
 
@@ -119,7 +119,7 @@ You'll see a 🐧 penguin icon appear in your menu bar!
 
 1. Copy any text to your clipboard
 2. Press `Cmd + Shift + P` from anywhere
-3. Watch the icon change: 🐧 → ⏳ → ✅
+3. Watch the icon change: ✏️ → ⏳ → ✅
 4. The rephrased text is automatically copied to your clipboard
 5. Paste it wherever you need!
 
@@ -136,13 +136,13 @@ You'll see a 🐧 penguin icon appear in your menu bar!
 
 #### Method 3: Using the Menu
 
-1. Click the 🐧 icon in your menu bar
+1. Click the ✏️ icon in your menu bar
 2. Select "Rephrase Clipboard"
 3. The rephrased text will be copied to your clipboard
 
 ### Selecting a Mode
 
-1. Click the 🐧 icon
+1. Click the ✏️ icon
 2. Hover over "Preset Modes"
 3. Select your desired mode:
    - **Polite** - For courteous communication
@@ -154,7 +154,7 @@ You'll see a 🐧 penguin icon appear in your menu bar!
 
 ### Using Custom Prompts
 
-1. Click the 🐧 icon
+1. Click the ✏️ icon
 2. Select "Custom Prompt..."
 3. Enter your custom instruction (e.g., "Rephrase this as a haiku")
 4. Click "Set"
@@ -162,7 +162,7 @@ You'll see a 🐧 penguin icon appear in your menu bar!
 
 ### Checking Provider Status
 
-1. Click the 🐧 icon
+1. Click the ✏️ icon
 2. Hover over "Provider Status" to see:
    - ✅ Available - Provider is working
    - ❌ Failed - Provider hit quota or failed
@@ -326,7 +326,7 @@ Rephraser/
 
 ## 🗑️ Uninstalling
 
-1. Stop the app (click 🐧 icon → Quit)
+1. Stop the app (click ✏️ icon → Quit)
 2. Remove the launch agent (if installed):
    ```bash
    launchctl unload ~/Library/LaunchAgents/com.textrephraser.plist
@@ -375,7 +375,7 @@ cp com.textrephraser.plist ~/Library/LaunchAgents/
 launchctl load ~/Library/LaunchAgents/com.textrephraser.plist
 ```
 
-**Enjoy rephrasing! 🐧✨**
+**Enjoy rephrasing! ✏️✨**
 
 For issues or questions, check the Troubleshooting section above or refer to:
 
