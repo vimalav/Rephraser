@@ -15,18 +15,19 @@ import pyperclip
 from pynput import keyboard
 import threading
 import time
+import queue
 
 # Load environment variables
 load_dotenv()
 
 # Preset modes with their prompts
 PRESET_MODES = {
-    "Polite": "Rephrase the following text to be more polite and courteous while maintaining the original meaning. Provide only ONE rephrased version, no options or alternatives:",
-    "Professional": "Rephrase the following text to be more professional and formal while maintaining the original meaning. Provide only ONE rephrased version, no options or alternatives:",
-    "Casual": "Rephrase the following text to be more casual and friendly while maintaining the original meaning. Provide only ONE rephrased version, no options or alternatives:",
-    "Concise": "Rephrase the following text to be more concise and brief while maintaining the original meaning. Provide only ONE rephrased version, no options or alternatives:",
-    "Detailed": "Rephrase the following text to be more detailed and elaborate while maintaining the original meaning. Provide only ONE rephrased version, no options or alternatives:",
-    "Simple": "Rephrase the following text using simpler words and shorter sentences while maintaining the original meaning. Provide only ONE rephrased version, no options or alternatives:",
+    "Polite": "Rephrase the following text to be more polite and courteous while maintaining the original meaning. IMPORTANT: If the input has multiple paragraphs or line breaks, preserve the paragraph structure in your output. Provide only ONE rephrased version, no options or alternatives:",
+    "Professional": "Rephrase the following text to be more professional and formal while maintaining the original meaning. IMPORTANT: If the input has multiple paragraphs or line breaks, preserve the paragraph structure in your output. Provide only ONE rephrased version, no options or alternatives:",
+    "Casual": "Rephrase the following text to be more casual and friendly while maintaining the original meaning. IMPORTANT: If the input has multiple paragraphs or line breaks, preserve the paragraph structure in your output. Provide only ONE rephrased version, no options or alternatives:",
+    "Concise": "Rephrase the following text to be more concise and brief while maintaining the original meaning. IMPORTANT: If the input has multiple paragraphs or line breaks, preserve the paragraph structure in your output. Provide only ONE rephrased version, no options or alternatives:",
+    "Detailed": "Rephrase the following text to be more detailed and elaborate while maintaining the original meaning. IMPORTANT: If the input has multiple paragraphs or line breaks, preserve the paragraph structure in your output. Provide only ONE rephrased version, no options or alternatives:",
+    "Simple": "Rephrase the following text using simpler words and shorter sentences while maintaining the original meaning. IMPORTANT: If the input has multiple paragraphs or line breaks, preserve the paragraph structure in your output. Provide only ONE rephrased version, no options or alternatives:",
 }
 
 class RephraserApp(rumps.App):
@@ -41,6 +42,9 @@ class RephraserApp(rumps.App):
         self.custom_prompt = ""
         self.current_provider = "Gemini"  # Default provider
         self.failed_providers = set()  # Track failed providers for this session
+        
+        # Queue for hotkey actions to be executed on main thread
+        self.action_queue = queue.Queue()
         
         # Initialize API clients
         self.gemini_key = os.getenv('GEMINI_API_KEY')
@@ -62,6 +66,9 @@ class RephraserApp(rumps.App):
         
         # Start global hotkey listener
         self.start_hotkey_listener()
+        
+        # Start action queue processor
+        self.start_action_processor()
     
     def build_menu(self):
         """Build the menu structure"""
@@ -229,11 +236,22 @@ class RephraserApp(rumps.App):
             thread.start()
     
     
+    def start_action_processor(self):
+        """Process queued actions on the main thread"""
+        @rumps.timer(0.1)
+        def process_actions(_):
+            try:
+                while not self.action_queue.empty():
+                    action = self.action_queue.get_nowait()
+                    action()
+            except queue.Empty:
+                pass
+    
     def start_hotkey_listener(self):
         """Start listening for global hotkeys"""
         # Track currently pressed keys with better state management
         current_keys = set()
-        last_trigger_time = {'quick': 0, 'modal': 0}
+        last_trigger_time = {'quick': 0.0, 'modal': 0.0}
         
         def on_quick_rephrase():
             # Debounce - prevent multiple triggers within 0.5 seconds
@@ -243,7 +261,8 @@ class RephraserApp(rumps.App):
             last_trigger_time['quick'] = current_time
             
             print("Quick rephrase triggered (Cmd+Shift+P)")
-            self.rephrase_clipboard(None)
+            # Queue action to be executed on main thread
+            self.action_queue.put(lambda: self.rephrase_clipboard(None))
         
         def on_modal_rephrase():
             # Debounce - prevent multiple triggers within 0.5 seconds
@@ -253,7 +272,8 @@ class RephraserApp(rumps.App):
             last_trigger_time['modal'] = current_time
             
             print("Modal rephrase triggered (Cmd+Shift+M)")
-            self.show_mode_selection_modal()
+            # Queue action to be executed on main thread
+            self.action_queue.put(lambda: self.show_mode_selection_modal())
         
         def check_hotkey_combination():
             """Check if a valid hotkey combination is pressed"""
