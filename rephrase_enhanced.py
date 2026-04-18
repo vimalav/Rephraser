@@ -20,14 +20,15 @@ import queue
 # Load environment variables
 load_dotenv()
 
-# Preset modes with their prompts
+# Preset modes with their prompts - Specialized for professional workplace communication
 PRESET_MODES = {
-    "Polite": "Rephrase the following text to be more polite and courteous while maintaining the original meaning. IMPORTANT: If the input has multiple paragraphs or line breaks, preserve the paragraph structure in your output. Provide only ONE rephrased version, no options or alternatives:",
-    "Professional": "Rephrase the following text to be more professional and formal while maintaining the original meaning. IMPORTANT: If the input has multiple paragraphs or line breaks, preserve the paragraph structure in your output. Provide only ONE rephrased version, no options or alternatives:",
-    "Casual": "Rephrase the following text to be more casual and friendly while maintaining the original meaning. IMPORTANT: If the input has multiple paragraphs or line breaks, preserve the paragraph structure in your output. Provide only ONE rephrased version, no options or alternatives:",
-    "Concise": "Rephrase the following text to be more concise and brief while maintaining the original meaning. IMPORTANT: If the input has multiple paragraphs or line breaks, preserve the paragraph structure in your output. Provide only ONE rephrased version, no options or alternatives:",
-    "Detailed": "Rephrase the following text to be more detailed and elaborate while maintaining the original meaning. IMPORTANT: If the input has multiple paragraphs or line breaks, preserve the paragraph structure in your output. Provide only ONE rephrased version, no options or alternatives:",
-    "Simple": "Rephrase the following text using simpler words and shorter sentences while maintaining the original meaning. IMPORTANT: If the input has multiple paragraphs or line breaks, preserve the paragraph structure in your output. Provide only ONE rephrased version, no options or alternatives:",
+    "Default": "Rephrase the provided text to be professional, concise, and diplomatic. Strictly remove all filler words (e.g., 'just,' 'actually,' 'I think,' 'kind of') and weak language. The goal is to sound authoritative yet respectful. Ensure the output is brief and suitable for high-level corporate communication. Maintain the original intent but polish the delivery for maximum clarity. IMPORTANT: If the input has multiple paragraphs or line breaks, preserve the paragraph structure in your output. Provide only ONE rephrased version, no options or alternatives:",
+    
+    "Work Update": "Transform this text into a clear, action-oriented status update. Remove all technical jargon and replace it with plain English that any stakeholder can understand. Focus on active verbs (e.g., 'Completed,' 'Launched,' 'Resolved'). Strip away all weak phrasing and filler words. The final text should clearly communicate progress, impact, and next steps without any fluff. IMPORTANT: If the input has multiple paragraphs or line breaks, preserve the paragraph structure in your output. Provide only ONE rephrased version, no options or alternatives:",
+    
+    "Pitch": "Rephrase this into a persuasive proposal or pitch. Use collaborative language (focus on 'we' and 'our') to invite the reader into the idea. Maintain a tone of 'humble confidence'—be convincing and optimistic about the potential of the idea without sounding arrogant or demanding. Frame suggestions as exciting opportunities for the team to explore together. IMPORTANT: If the input has multiple paragraphs or line breaks, preserve the paragraph structure in your output. Provide only ONE rephrased version, no options or alternatives:",
+    
+    "Feedback": "Rephrase this response to be strictly neutral, objective, and constructive. Remove personal pronouns where possible to focus on the work or the system rather than the individual. Eliminate all defensive tone and filler words. The goal is to provide a logic-based explanation or piece of feedback that is helpful and growth-oriented. Ensure the tone remains professional and detached from emotion. IMPORTANT: If the input has multiple paragraphs or line breaks, preserve the paragraph structure in your output. Provide only ONE rephrased version, no options or alternatives:",
 }
 
 class RephraserApp(rumps.App):
@@ -38,7 +39,7 @@ class RephraserApp(rumps.App):
             quit_button=None
         )
         self.is_processing = False
-        self.current_mode = "Professional"  # Default mode
+        self.current_mode = "Default"  # Default mode
         self.custom_prompt = ""
         self.current_provider = "Gemini"  # Default provider
         self.failed_providers = set()  # Track failed providers for this session
@@ -107,6 +108,7 @@ class RephraserApp(rumps.App):
             [rumps.MenuItem("Provider Status"), provider_items],
             rumps.MenuItem("Reset Failed Providers", callback=self.reset_providers),
             None,
+            rumps.MenuItem("Restart App", callback=self.restart_app),
             rumps.MenuItem("About", callback=self.show_about),
             rumps.MenuItem("Quit", callback=self.quit_app)
         ]
@@ -156,7 +158,12 @@ class RephraserApp(rumps.App):
                     message="Copy text and press Cmd+Shift+P to rephrase"
                 )
     def reset_providers(self, _):
-        """Reset failed providers to allow retry"""
+        """Reset failed providers to allow retry
+        
+        When an AI provider (Gemini, Groq, or HuggingFace) hits a rate limit,
+        it's marked as 'failed' to avoid repeated failed attempts. This option
+        clears that list so you can try those providers again.
+        """
         self.failed_providers.clear()
         self.build_menu()  # Rebuild menu to update status
         
@@ -165,6 +172,35 @@ class RephraserApp(rumps.App):
             subtitle="All providers available again",
             message="Failed providers have been reset and can be retried"
         )
+    
+    def restart_app(self, _):
+        """Restart the application"""
+        import sys
+        import subprocess
+        
+        rumps.notification(
+            title="Restarting...",
+            subtitle="Application will restart now",
+            message=""
+        )
+        
+        # Get the path to the current script
+        script_path = os.path.abspath(__file__)
+        
+        # Kill any existing instances first to prevent duplicates
+        try:
+            subprocess.run([
+                'pkill', '-f', 'rephrase_enhanced.py'
+            ], check=False)
+            time.sleep(0.5)  # Wait for processes to terminate
+        except Exception as e:
+            print(f"Error killing existing instances: {e}")
+        
+        # Start new instance
+        subprocess.Popen([sys.executable, script_path])
+        
+        # Quit current instance
+        rumps.quit_application()
     
     
     def show_about(self, _):
@@ -249,9 +285,11 @@ class RephraserApp(rumps.App):
     
     def start_hotkey_listener(self):
         """Start listening for global hotkeys"""
-        # Track currently pressed keys with better state management
+        # Track currently pressed keys
         current_keys = set()
         last_trigger_time = {'quick': 0.0, 'modal': 0.0}
+        triggered = {'quick': False, 'modal': False}
+        modal_is_open = {'value': False}  # Track if modal is currently open
         
         def on_quick_rephrase():
             # Debounce - prevent multiple triggers within 0.5 seconds
@@ -265,6 +303,11 @@ class RephraserApp(rumps.App):
             self.action_queue.put(lambda: self.rephrase_clipboard(None))
         
         def on_modal_rephrase():
+            # Prevent opening modal if already open
+            if modal_is_open['value']:
+                print("Modal already open, ignoring trigger")
+                return
+            
             # Debounce - prevent multiple triggers within 0.5 seconds
             current_time = time.time()
             if current_time - last_trigger_time['modal'] < 0.5:
@@ -272,8 +315,16 @@ class RephraserApp(rumps.App):
             last_trigger_time['modal'] = current_time
             
             print("Modal rephrase triggered (Cmd+Shift+M)")
+            modal_is_open['value'] = True
+            
             # Queue action to be executed on main thread
-            self.action_queue.put(lambda: self.show_mode_selection_modal())
+            def show_modal_and_reset():
+                try:
+                    self.show_mode_selection_modal()
+                finally:
+                    modal_is_open['value'] = False
+            
+            self.action_queue.put(show_modal_and_reset)
         
         def check_hotkey_combination():
             """Check if a valid hotkey combination is pressed"""
@@ -288,17 +339,32 @@ class RephraserApp(rumps.App):
             if not (cmd_pressed and shift_pressed):
                 return None
             
-            # Check for character keys
+            # MUST have exactly 3 keys: Cmd + Shift + (P or M)
+            # This prevents triggering on just Cmd+Shift
+            if len(current_keys) < 3:
+                return None
+            
+            # Check for specific character keys - look for P or M
+            has_p = False
+            has_m = False
+            
             for key in current_keys:
                 try:
                     if hasattr(key, 'char') and key.char:
                         char = key.char.lower()
                         if char == 'p':
-                            return 'quick'
+                            has_p = True
                         elif char == 'm':
-                            return 'modal'
+                            has_m = True
                 except (AttributeError, TypeError):
                     continue
+            
+            # Only return a hotkey if we have the letter key
+            # Prioritize 'p' over 'm' if both are somehow pressed
+            if has_p:
+                return 'quick'
+            elif has_m:
+                return 'modal'
             
             return None
         
@@ -311,15 +377,33 @@ class RephraserApp(rumps.App):
             
             # Check for hotkey combinations
             hotkey = check_hotkey_combination()
-            if hotkey == 'quick':
+            
+            # Only trigger once per key combination press
+            if hotkey == 'quick' and not triggered['quick']:
+                triggered['quick'] = True
                 on_quick_rephrase()
-            elif hotkey == 'modal':
+            elif hotkey == 'modal' and not triggered['modal']:
+                triggered['modal'] = True
                 on_modal_rephrase()
         
         def on_release(key):
             # Remove key from current set
             try:
                 current_keys.discard(key)
+                
+                # Reset trigger flags when ANY key in the combination is released
+                if key in [keyboard.Key.cmd, keyboard.Key.cmd_r,
+                          keyboard.Key.shift, keyboard.Key.shift_r]:
+                    triggered['quick'] = False
+                    triggered['modal'] = False
+                
+                # Also reset when character keys are released
+                if hasattr(key, 'char') and key.char:
+                    char = key.char.lower()
+                    if char == 'p':
+                        triggered['quick'] = False
+                    elif char == 'm':
+                        triggered['modal'] = False
             except:
                 pass
         
@@ -364,7 +448,11 @@ class RephraserApp(rumps.App):
         try:
             response = self.gemini_client.models.generate_content(
                 model='gemini-2.5-flash',
-                contents=prompt
+                contents=prompt,
+                config={
+                    'temperature': 0.7,
+                    'max_output_tokens': 1024
+                }
             )
             return response.text if response.text else None
         except Exception as e:

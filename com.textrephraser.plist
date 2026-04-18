@@ -17,6 +17,9 @@
     <key>KeepAlive</key>
     <false/>
     
+    <key>SuccessfulExit</key>
+    <false/>
+    
     <key>ThrottleInterval</key>
     <integer>10</integer>
     

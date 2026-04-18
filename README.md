@@ -8,13 +8,11 @@ A lightweight macOS menu bar application that rephrases clipboard text using mul
 - ⌨️ **Global Hotkeys**:
   - `Cmd + Shift + P` - Quick rephrase with current mode
   - `Cmd + Shift + M` - Show mode selection modal
-- 🎯 **Multiple Preset Modes**:
-  - **Polite**: Make text more courteous and respectful
-  - **Professional**: Transform to formal business language
-  - **Casual**: Convert to friendly, relaxed tone
-  - **Concise**: Shorten while keeping the meaning
-  - **Detailed**: Expand with more information
-  - **Simple**: Use simpler words and shorter sentences
+- 🎯 **Specialized Preset Modes**:
+  - **Default**: Professional, concise, diplomatic communication (removes filler words)
+  - **Work Update**: Clear, action-oriented status updates with active verbs
+  - **Pitch**: Persuasive proposals with collaborative language and humble confidence
+  - **Feedback**: Neutral, objective, constructive feedback focused on growth
 - ✏️ **Custom Prompts**: Create your own rephrasing instructions
 - 📋 **Clipboard Integration**: Automatically works with copied text
 - 🔄 **Visual Feedback**: Icon changes during processing (✏️ → ⏳ → ✅)
@@ -145,12 +143,10 @@ You'll see a ✏️ pencil icon appear in your menu bar!
 1. Click the ✏️ icon
 2. Hover over "Preset Modes"
 3. Select your desired mode:
-   - **Polite** - For courteous communication
-   - **Professional** - For business emails and documents
-   - **Casual** - For friendly messages
-   - **Concise** - To shorten lengthy text
-   - **Detailed** - To expand brief text
-   - **Simple** - To simplify complex language
+   - **Default** - Professional, concise communication (removes filler words and weak language)
+   - **Work Update** - Clear status updates with active verbs (Completed, Launched, Resolved)
+   - **Pitch** - Persuasive proposals with collaborative "we/our" language
+   - **Feedback** - Neutral, objective feedback focused on work/system, not individuals
 
 ### Using Custom Prompts
 
